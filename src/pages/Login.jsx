@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import React from "react";
 import api from "../components/axiosInstance";
+import logo from "../assets/lums-university-seeklogo.png";
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");   
@@ -56,7 +57,7 @@ export default function Login({ onLogin }) {
       <header className="flex justify-between items-center px-6 py-4 shadow-md bg-white">
         <div className="flex items-center space-x-2">
           <img
-            src="../assets/lums-university-seeklogo.png"
+            src={logo}
             alt="LUMS Logo"
             className="h-10"
           />
