@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import React from "react";
+import api from "../components/axiosInstance";
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");   
@@ -15,21 +16,13 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      // const res = await fetch("http://localhost:5000/api/auth/login", {
-      const res = await fetch("https://lce-backend-bxn1.onrender.com/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      // axiosInstance automatically picks the correct baseURL
+      const res = await api.post("/api/auth/login", {
+        email,
+        password,
       });
 
-      const data = await res.json();
-      console.log("Login response:", data);
-
-      if (!res.ok) {
-        setError(data.error || "Invalid email or password.");
-        setLoading(false);
-        return;
-      }
+      const data = res.data;
 
       // Save user & token in localStorage
       localStorage.setItem("accessToken", data.accessToken);
@@ -43,11 +36,19 @@ export default function Login({ onLogin }) {
 
     } catch (err) {
       console.error("Login error:", err);
-      setError("Something went wrong. Please try again later.");
+
+      // Show backend error if exists
+      if (err.response && err.response.data) {
+        setError(err.response.data.error || "Invalid email or password.");
+      } else {
+        setError("Something went wrong. Please try again later.");
+      }
+
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-gray-50 w-screen">
@@ -55,7 +56,7 @@ export default function Login({ onLogin }) {
       <header className="flex justify-between items-center px-6 py-4 shadow-md bg-white">
         <div className="flex items-center space-x-2">
           <img
-            src="https://upload.wikimedia.org/wikipedia/en/4/47/LUMS_Logo.png"
+            src="../assets/lums-university-seeklogo.png"
             alt="LUMS Logo"
             className="h-10"
           />

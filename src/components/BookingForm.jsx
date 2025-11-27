@@ -20,8 +20,8 @@ export default function BookingForm({
   useEffect(() => {
     const fetchMeetings = async () => {
       try {
-        // const res = await axios.get("http://localhost:5000/api/meetings");
-        const res = await axios.get("https://lce-backend-bxn1.onrender.com/api/meetings");
+        const res = await axios.get("http://localhost:5000/api/meetings");
+        // const res = await axios.get("https://lce-backend-bxn1.onrender.com/api/meetings");
         setExistingMeetings(res.data || []);
       } catch (err) {
         console.error("Error fetching meetings for conflict check:", err);
@@ -97,8 +97,8 @@ export default function BookingForm({
         description: newEvent.description || "",
       };
 
-      // const res = await axios.post("http://localhost:5000/api/meetings", payload, {
-      const res = await axios.post("https://lce-backend-bxn1.onrender.com/api/meetings", payload, {
+      const res = await axios.post("http://localhost:5000/api/meetings", payload, {
+      // const res = await axios.post("https://lce-backend-bxn1.onrender.com/api/meetings", payload, {
         headers: { "Content-Type": "application/json" },
       });
 

@@ -20,8 +20,8 @@ export default function UserManagement({ users, setUsers, onClose }) {
 
   // base axios instance (optional) and send the JWT token if stored in localStorage in header
   const api = axios.create({
-    // baseURL: "http://localhost:5000/api/signup", // matches your app.use("/api/signup", signupRouter)
-    baseURL: "https://lce-backend-bxn1.onrender.com/api/signup", // matches your app.use("/api/signup", signupRouter)
+    baseURL: "http://localhost:5000/api/signup", // matches your app.use("/api/signup", signupRouter)
+    // baseURL: "https://lce-backend-bxn1.onrender.com/api/signup", // matches your app.use("/api/signup", signupRouter)
     headers: {
       Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
     },

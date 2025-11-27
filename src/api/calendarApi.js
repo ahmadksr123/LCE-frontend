@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const API_URL = "http://localhost:5000/api/meetings";
-const API_URL = "https://lce-backend-bxn1.onrender.com/api/meetings";
+const API_URL = "http://localhost:5000/api/meetings";
+// const API_URL = "https://lce-backend-bxn1.onrender.com/api/meetings";
 
 // ✅ Fetch all meetings
 export const fetchMeetings = async () => {
