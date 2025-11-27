@@ -1,7 +1,8 @@
 // src/api/authApi.js
 import axios from "axios";
 
-const API = "http://localhost:5000/api/auth";
+// const API = "http://localhost:5000/api/auth";
+const API = "https://lce-backend-bxn1.onrender.com/api/auth";
 
 // ✅ Refresh token
 export const refreshToken = async () => {

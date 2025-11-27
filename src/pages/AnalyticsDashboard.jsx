@@ -34,7 +34,8 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/signup/");
+        // const res = await fetch("http://localhost:5000/api/signup/");
+        const res = await fetch("https://lce-backend-bxn1.onrender.com/api/signup/");
         const data = await res.json();
         setUsers(data || []);
       // eslint-disable-next-line no-unused-vars
