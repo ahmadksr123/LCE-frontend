@@ -135,13 +135,13 @@ export default function Login({ onLogin }) {
 
         {/* Right - Glass Login Card */}
         <div ref={formRef} className="w-full lg:w-1/2 max-w-md">
-          <div className="backdrop-blur-2xl bg-white/70 border border-purple-200/50 rounded-3xl shadow-2xl p-8 lg:p-10 animate-fadeIn">
+          <div className="backdrop-blur-2xl bg-white/70 border border-purple-200/50 rounded-3xl shadow-2xl p-4 lg:p-10 animate-fadeIn">
             {/* <h2 className="text-4xl font-bold text-purple-900 text-center mb-8 drop-shadow-md">
               Welcome Back
             </h2> */}
 
             {error && (
-              <div className="mb-6 p-4 bg-red-100/80 backdrop-blur border border-red-300 rounded-xl text-red-700 text-center flex items-center justify-center gap-2 animate-shake">
+              <div className="mb-4 p-4 bg-red-100/80 backdrop-blur border border-red-300 rounded-xl text-red-700 text-center flex items-center justify-center gap-2 animate-shake">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -150,7 +150,7 @@ export default function Login({ onLogin }) {
             )}
 
             {success && (
-              <div className="mb-6 p-4 bg-green-100/80 backdrop-blur border border-green-300 rounded-xl text-green-700 text-center flex items-center justify-center gap-2 animate-fadeIn">
+              <div className="mb-4 p-4 bg-green-100/80 backdrop-blur border border-green-300 rounded-xl text-green-700 text-center flex items-center justify-center gap-2 animate-fadeIn">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -160,7 +160,7 @@ export default function Login({ onLogin }) {
 
             <form onSubmit={handleSubmit}>
               {/* Email */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-purple-900 font-semibold mb-2">Email Address</label>
                 <div className="relative">
                   <input
@@ -176,7 +176,7 @@ export default function Login({ onLogin }) {
               </div>
 
               {/* Password */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-purple-900 font-semibold mb-2">Password</label>
                 <div className="relative">
                   <input
@@ -208,13 +208,13 @@ export default function Login({ onLogin }) {
               </div>
 
               {/* Remember Me + Forgot Password */}
-              <div className="flex justify-between items-center mb-8 text-sm text-purple-700">
+              <div className="flex justify-between items-center mb-4 text-sm text-purple-700">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="mr-2 bg-transparent h-4 w-4 text-purple-600 rounded focus:ring-purple-500"
+                    className="mr-1 bg-transparent h-4 w-4 text-purple-600 rounded focus:ring-purple-500"
                   />
                   Remember me
                 </label>
@@ -251,7 +251,7 @@ export default function Login({ onLogin }) {
             </form>
 
             {/* Contact Admin Trigger */}
-            <p className="text-center mt-8 text-purple-700">
+            <p className="text-center mt-2 text-purple-700">
               Don't have an account?{" "}
               <button
                 type="button"
@@ -262,7 +262,7 @@ export default function Login({ onLogin }) {
               </button>
             </p>
 
-            <p className="text-center mt-6 text-xs text-purple-500">
+            <p className="text-center mt-2 text-xs text-purple-500">
               Secured by LCE
             </p>
           </div>
