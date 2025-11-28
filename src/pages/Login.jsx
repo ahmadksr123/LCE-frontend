@@ -269,78 +269,85 @@ export default function Login({ onLogin }) {
         </div>
       </div>
 
-      {/* ====================== CONTACT ADMIN MODAL ====================== */}
-      {showContactModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowContactModal(false)}
-          />
+      {/* ===================== CONTACT ADMIN MODAL ===================== */}
+{showContactModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
 
-          {/* Modal Card */}
-          <div className="relative max-w-2xl w-full backdrop-blur-2xl bg-white/85 border border-purple-200/60 rounded-3xl shadow-2xl p-10 animate-slideUp">
-            {/* Close X */}
-            <button
-              onClick={() => setShowContactModal(false)}
-              className="absolute bg-transparent top-4 right-4 text-purple-600 hover:text-purple-800 transition"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    {/* Backdrop */}
+    <div
+      className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      onClick={() => setShowContactModal(false)}
+    />
 
-            <h3 className="text-3xl font-bold text-purple-900 text-center mb-10">
-              Need Access?
-            </h3>
+    {/* Modal */}
+    <div className="relative w-full max-w-xl bg-white/90 border border-purple-200/40 rounded-3xl shadow-xl p-8 animate-slideUp">
 
-            <div className="grid md:grid-cols-2 gap-10 text-lg">
-              {/* Left: Miss Amna Awan */}
-              <div className="flex flex-col items-center text-center">
-                <div className="w-28 h-28 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-5xl font-bold shadow-xl mb-4">
-                  A
-                </div>
-                <p className="font-semibold text-purple-900">Miss Amna Awan</p>
-                <p className="text-purple-700 mt-2 leading-relaxed">
-                  Visible, professional,
-                  <br />
-                  and always ready to help you get onboard!
-                </p>
-                <a
-                  href="mailto:amna.awan@lums.edu.pk"
-                  className="mt-6 inline-block px-8 py-3 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 transition shadow-lg"
-                >
-                  Email Amna
-                </a>
-              </div>
+      {/* Close Button */}
+      <button
+        onClick={() => setShowContactModal(false)}
+        className="absolute bg-transparent top-3 right-3 text-purple-700 hover:text-purple-900 transition"
+      >
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
 
-              {/* Right: Mr. Umar */}
-              <div className="flex flex-col items-center text-center">
-                <div className="w-28 h-28 bg-gray-200 border-4 border-dashed border-gray-400 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </div>
-                <p className="font-semibold text-purple-900">Mr. Umar</p>
-                <p className="text-purple-700 mt-2 leading-relaxed italic">
-                  Invisible — because his MacBook
-                  <br />
-                  is doing the attendance.
-                  <br />
-                  <span className="text-3xl">(¬‿¬)</span>
-                </p>
-                <span className="mt-6 px-8 py-3 bg-gray-300 text-gray-600 font-medium rounded-xl cursor-not-allowed inline-block">
-                  Email Umar (if you can find him)
-                </span>
-              </div>
-            </div>
+      <h3 className="text-2xl font-bold text-purple-900 text-center mb-8">
+        Need Access? Just pray
+      </h3>
 
-            <div className="text-center mt-12 text-purple-600 font-medium text-lg">
-              Please reach out to <strong>Miss Amna Awan</strong> to get your account created.
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+
+        {/* Amna */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-24 h-24 bg-purple-600 rounded-full text-white flex items-center justify-center text-4xl font-bold shadow-lg mb-3">
+            A
           </div>
+          <p className="font-semibold text-purple-900">Miss Amna Awan in the left side office</p>
+
+          <p className="text-purple-700 text-sm mt-2 leading-relaxed">
+            The actual human in charge.
+            <br />Professional. Helpful. Real.
+          </p>
+
+          <a
+            href="mailto:amna.awan@lums.edu.pk"
+            className="mt-5 px-6 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition"
+          >
+            Email Amna
+          </a>
         </div>
-      )}
+
+        {/* Umar */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center mb-3">
+            <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+          </div>
+
+          <p className="font-semibold text-purple-900">Mr. Umar in the right side office behind iMac</p>
+
+          <p className="text-purple-700 text-sm mt-2 leading-relaxed italic">
+            Physically present.
+            <br />Digitally invisible.
+            <br />iMac: 1, Umar: 0.
+          </p>
+
+          <span className="mt-5 px-6 py-2 bg-gray-200 text-gray-600 text-sm rounded-lg cursor-not-allowed">
+            Email Umar (good luck)
+          </span>
+        </div>
+      </div>
+
+      <div className="text-center mt-10 text-purple-700 text-sm font-medium">
+        For actual access, kindly contact <strong>Ahmad Faraz, seat no. 100</strong>
+      </div>
+
+    </div>
+  </div>
+)}
+
       
     </div>
   );
