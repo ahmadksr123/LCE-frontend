@@ -81,7 +81,7 @@ export default function Login({ onLogin }) {
       </div>
 
       {/* Glassmorphic Navbar */}      
-      <header className=" fixed top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-purple-200/50 shadow-lg">
+      <header className="sticky  top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-purple-200/50 shadow-lg">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center space-x-3">
             <img src={logo} alt="LUMS Logo" className="h-10 drop-shadow-md" />
