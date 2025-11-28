@@ -280,7 +280,7 @@ export default function Login({ onLogin }) {
     />
 
     {/* Modal */}
-    <div className="relative w-full max-w-xl bg-white/90 border border-purple-200/40 rounded-3xl shadow-xl p-8 animate-slideUp">
+    <div className="mt-20 mb-20 relative w-full max-w-xl bg-white/90 border border-purple-200/40 rounded-3xl shadow-xl p-8 animate-slideUp">
 
       {/* Close Button */}
       <button
@@ -300,7 +300,7 @@ export default function Login({ onLogin }) {
 
         {/* Amna */}
         <div className="flex flex-col items-center text-center">
-          <div className="w-24 h-24 bg-purple-600 rounded-full text-white flex items-center justify-center text-4xl font-bold shadow-lg mb-3">
+          <div className="hidden sm:flex w-24 h-24 bg-purple-600 rounded-full text-white  items-center justify-center text-4xl font-bold shadow-lg mb-3">
             A
           </div>
           <p className="font-semibold text-purple-900">Miss Amna Awan in the left side office</p>
@@ -320,7 +320,7 @@ export default function Login({ onLogin }) {
 
         {/* Umar */}
         <div className="flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full border-2 border-gray-300 flex items-center justify-center mb-3">
+          <div className="hidden sm:flex w-24 h-24 rounded-full border-2 border-gray-300  items-center justify-center mb-3">
             <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
@@ -341,7 +341,7 @@ export default function Login({ onLogin }) {
       </div>
 
       <div className="text-center mt-10 text-purple-700 text-sm font-medium">
-        For actual access, kindly contact <strong>Ahmad Faraz, seat no. 100</strong>
+        For actual access, kindly contact <strong>Ahmad Faraz</strong>
       </div>
 
     </div>
