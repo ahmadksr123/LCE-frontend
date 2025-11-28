@@ -12,7 +12,6 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false); // Modal state
 
   const formRef = useRef(null);
@@ -81,8 +80,8 @@ export default function Login({ onLogin }) {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDgwIDAgTCAwIDAgMCA4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDIwMCwxODAsMjQwLDAuMDgpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
       </div>
 
-      {/* Glassmorphic Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-purple-200/50 shadow-lg">
+      {/* Glassmorphic Navbar */}      
+      <header className=" fixed top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-purple-200/50 shadow-lg">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center space-x-3">
             <img src={logo} alt="LUMS Logo" className="h-10 drop-shadow-md" />
@@ -90,19 +89,6 @@ export default function Login({ onLogin }) {
               Centre for Entrepreneurship
             </span>
           </div>
-
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden text-purple-700 p-2 rounded-lg hover:bg-purple-100/60 transition"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {showMobileMenu ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
         </div>
       </header>
 
@@ -127,27 +113,32 @@ export default function Login({ onLogin }) {
           </p>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-6 max-w-md mx-auto lg:mx-0">
-            {["500+", "24/7", "100+"].map((num, i) => (
-              <div
-                key={i}
-                className="backdrop-blur-xl bg-white/60 border border-purple-200/60 rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
-              >
-                <div className="text-4xl font-bold text-purple-800">{num}</div>
-                <div className="text-sm font-medium text-purple-600 mt-1">
-                  {["Members", "Access", "Events"][i]}
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="grid grid-cols-3 gap-4 sm:gap-6">
+  {["500+", "24/7", "100+"].map((num, i) => (
+    <div
+      key={i}
+      className="backdrop-blur-xl bg-white/60 border border-purple-200/60 rounded-2xl p-5 sm:p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
+    >
+      {/* Number - Responsive font size */}
+      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-800 leading-tight">
+        {num}
+      </div>
+
+      {/* Label - Responsive font size */}
+      <div className="text-xs sm:text-sm font-medium text-purple-600 mt-1.5">
+        {["Members", "Access", "Events"][i]}
+      </div>
+    </div>
+  ))}
+</div>
         </div>
 
         {/* Right - Glass Login Card */}
         <div ref={formRef} className="w-full lg:w-1/2 max-w-md">
           <div className="backdrop-blur-2xl bg-white/70 border border-purple-200/50 rounded-3xl shadow-2xl p-8 lg:p-10 animate-fadeIn">
-            <h2 className="text-4xl font-bold text-purple-900 text-center mb-8 drop-shadow-md">
+            {/* <h2 className="text-4xl font-bold text-purple-900 text-center mb-8 drop-shadow-md">
               Welcome Back
-            </h2>
+            </h2> */}
 
             {error && (
               <div className="mb-6 p-4 bg-red-100/80 backdrop-blur border border-red-300 rounded-xl text-red-700 text-center flex items-center justify-center gap-2 animate-shake">
@@ -350,26 +341,7 @@ export default function Login({ onLogin }) {
           </div>
         </div>
       )}
-
-      {/* Custom Animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-8px); }
-          75% { transform: translateX(8px); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
-        .animate-slideUp { animation: slideUp 0.7s ease-out; }
-        .animate-shake { animation: shake 0.5s ease-in-out; }
-      `}</style>
+      
     </div>
   );
 }
