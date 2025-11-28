@@ -37,11 +37,11 @@ export default function Login({ onLogin }) {
     return () => window.visualViewport?.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleInputFocus = () => {
-    if (window.innerWidth < 1024) {
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
-    }
-  };
+  // const handleInputFocus = () => {
+  //   if (window.innerWidth < 1024) {
+  //     setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -167,7 +167,14 @@ export default function Login({ onLogin }) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onFocus={handleInputFocus}
+                    onFocus={(e) => {
+      setTimeout(() => {
+        e.target.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 250); // delay helps after keyboard opens
+    }}
                     className="w-full px-5 py-4 bg-white/50 backdrop-blur border border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300/50 text-purple-900 placeholder-purple-500 transition"
                     placeholder="your.email@example.com"
                     required
@@ -179,15 +186,24 @@ export default function Login({ onLogin }) {
               <div className="mb-4">
                 <label className="block text-purple-900 font-semibold mb-2">Password</label>
                 <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={handleInputFocus}
-                    className="w-full px-5 py-4 pr-14 bg-white/50 backdrop-blur border border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300/50 text-purple-900 placeholder-purple-500"
-                    placeholder="••••••••"
-                    required
-                  />
+  <input
+    type={showPassword ? "text" : "password"}
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    onFocus={(e) => {
+      setTimeout(() => {
+        e.target.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 250); // delay helps after keyboard opens
+    }}
+    className="w-full px-5 py-4 pr-14 bg-white/50 backdrop-blur border border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300/50 text-purple-900 placeholder-purple-500"
+    placeholder="••••••••"
+    required
+  />
+
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
