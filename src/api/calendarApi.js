@@ -1,7 +1,10 @@
 import axios from "axios";
+import api from "../components/axiosInstance"; // Make sure this path is correct
 
-const API_URL = "http://localhost:5000/api/meetings";
+// const API_URL = "http://localhost:5000/api/meetings";
 // const API_URL = "https://lce-backend-bxn1.onrender.com/api/meetings";
+
+const API_URL = api.defaults.baseURL + "/api/meetings";
 
 // ✅ Fetch all meetings
 export const fetchMeetings = async () => {

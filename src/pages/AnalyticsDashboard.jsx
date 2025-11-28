@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { fetchMeetings } from "../api/calendarApi";
+import api from "../components/axiosInstance"; // Make sure this path is correct
 
 import {
   AnalyticsHeader,
@@ -31,16 +32,30 @@ export default function AnalyticsDashboard() {
     })();
   }, []);
 
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const res = await fetch("http://localhost:5000/api/signup/");
+  //       // const res = await fetch("https://lce-backend-bxn1.onrender.com/api/signup/");
+  //       const data = await res.json();
+  //       setUsers(data || []);
+  //     // eslint-disable-next-line no-unused-vars
+  //     } catch (err) {
+  //       console.error("Failed to fetch users");
+  //     }
+  //   })();
+  // }, []);
+  // Fetch users data using axios instance ✅
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/signup/");
-        // const res = await fetch("https://lce-backend-bxn1.onrender.com/api/signup/");
-        const data = await res.json();
-        setUsers(data || []);
-      // eslint-disable-next-line no-unused-vars
+        const res = await api.get("/api/signup/"); // ✅ Using axios instance with proper path
+        const data = res.data || [];
+        setUsers(data);
       } catch (err) {
-        console.error("Failed to fetch users");
+        console.error("Failed to fetch users:", err);
+        // Optional: Set fallback empty array
+        setUsers([]);
       }
     })();
   }, []);

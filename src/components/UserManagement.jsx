@@ -1,11 +1,32 @@
 // src/components/UserManagement.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { Lock, User, Shield, Building2, Trash2 } from "lucide-react";
-// import { uid } from "../utils/uid";
+import { toast } from "react-hot-toast";
+import api from "../components/axiosInstance"; // Make sure this path is correct
+import {
+  Shield,
+  User,
+  Building2,
+  Trash2,
+  Lock,
+  Search,
+  Plus,
+  X,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Users,
+  Filter,
+} from "lucide-react";
 
-export default function UserManagement({ users, setUsers, onClose }) {
-  const [loading, setLoading] = useState(false);
+export default function UserManagement({ onClose }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [showAddForm, setShowAddForm] = useState(false);
+
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -14,52 +35,50 @@ export default function UserManagement({ users, setUsers, onClose }) {
     role: "User",
     password: "",
   });
-  const [showPasswordModal, setShowPasswordModal] = useState(null); // userId or null
+
+  const [showPasswordModal, setShowPasswordModal] = useState(null);
   const [passwordInput, setPasswordInput] = useState("");
-  const [actionLoading, setActionLoading] = useState({}); // { [userId]: boolean }
+  const [actionLoading, setActionLoading] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  // base axios instance (optional) and send the JWT token if stored in localStorage in header
-  const api = axios.create({
-    baseURL: "http://localhost:5000/api/signup", // matches your app.use("/api/signup", signupRouter)
-    // baseURL: "https://lce-backend-bxn1.onrender.com/api/signup", // matches your app.use("/api/signup", signupRouter)
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-    },
-  });
-
-  // fetch users from backend and normalize shape
+  // const api = axios.create({
+  //   baseURL: "http://localhost:5000/api/signup",
+  //   headers: {
+  //     Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  //   },
+  // });
+  // const api = apis.defaults.baseURL + "/api/signup";
+  // console.log("API Base URL:", api);
+  // Fetch users
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/");
-      console.log("Fetched users:", res);
-      const data = res.data.map((u) => ({
-        id: u._id,
-        name: u.name,
-        email: u.email,
-        cardId: u.cardID || u.cardId || "",
-        organization: u.organization || "",
-        role: u.role || "User",
-        active:
-          u.isActive !== undefined
-            ? u.isActive
-            : u.active !== undefined
-            ? u.active
-            : true,
-        createdAt: u.createdAt
-          ? new Date(u.createdAt).toLocaleDateString()
-          : "",
-      }));
-      // remove the user themselves from the list
-      const currentUser = JSON.parse(localStorage.getItem("user"));
-      if (currentUser?.id) {
-        setUsers(data.filter((u) => u.id !== currentUser.id));
-      } else {
-        setUsers(data);
-      }
+      const res = await api.get("/api/signup/");
+      
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const formatted = res.data
+        .map((u) => ({
+          id: u._id,
+          name: u.name || "Unknown",
+          email: u.email,
+          cardId: u.cardID || u.cardId || "N/A",
+          organization: u.organization || "Not set",
+          role: u.role || "User",
+          active: u.isActive ?? true,
+          createdAt: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "Unknown",
+        }))
+        .filter((u) => u.id !== currentUser.id); // Exclude self
+
+      setUsers(formatted);
     } catch (err) {
-      console.error("Failed to fetch users:", err);
-      alert("Failed to load users.");
+      toast.error("Failed to load users");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -67,36 +86,51 @@ export default function UserManagement({ users, setUsers, onClose }) {
 
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Add user -> use POST /api/signup/signup (your router currently uses router.post("/signup"...))
+  // Filtered & Searched Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.cardId.includes(searchTerm);
+
+      const matchesRole = filterRole === "All" || user.role === filterRole;
+      const matchesStatus =
+        filterStatus === "All" ||
+        (filterStatus === "Active" && user.active) ||
+        (filterStatus === "Inactive" && !user.active);
+
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [users, searchTerm, filterRole, filterStatus]);
+
+  // Add User
   const addUser = async () => {
-    if (
-      !newUser.name ||
-      !newUser.email ||
-      !newUser.cardId ||
-      !newUser.organization ||
-      !newUser.password
-    ) {
-      alert("Please fill all fields.");
+    if (!newUser.name || !newUser.email || !newUser.cardId || !newUser.password) {
+      toast.error("Please fill all required fields");
       return;
     }
 
+    if (newUser.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    setActionLoading((s) => ({ ...s, add: true }));
     try {
-      setActionLoading((s) => ({ ...s, add: true }));
-      await api.post("/create", {
-        name: newUser.name,
-        email: newUser.email,
+      await api.post("/api/signup/create", {
+        name: newUser.name.trim(),
+        email: newUser.email.toLowerCase().trim(),
         password: newUser.password,
-        cardID: newUser.cardId, // server expects cardID (capital D) in your code
+        cardID: newUser.cardId,
         organization: newUser.organization,
         role: newUser.role,
         isActive: true,
       });
 
-      // refresh list (server's signup route returns only message currently)
-      await fetchUsers();
+      toast.success("User added successfully");
       setNewUser({
         name: "",
         email: "",
@@ -105,303 +139,459 @@ export default function UserManagement({ users, setUsers, onClose }) {
         role: "User",
         password: "",
       });
+      setShowAddForm(false);
+      fetchUsers();
     } catch (err) {
-      console.error("Add user failed:", err);
-      alert(err?.response?.data?.error || "Failed to add user");
+      toast.error(err?.response?.data?.error || "Failed to add user");
     } finally {
       setActionLoading((s) => ({ ...s, add: false }));
     }
   };
 
-  // Update role or other fields -> PUT /api/signup/:id
+  // Update Role
   const updateRole = async (id, newRole) => {
     setActionLoading((s) => ({ ...s, [id]: true }));
     try {
-      await api.put(`/${id}`, { role: newRole });
+      await api.put(`/api/signup/${id}`, { role: newRole });
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, role: newRole } : u))
       );
+      toast.success("Role updated");
     } catch (err) {
-      console.error("Failed to update role:", err);
-      alert("Failed to update role");
+      toast.error("Failed to update role");
     } finally {
       setActionLoading((s) => ({ ...s, [id]: false }));
     }
   };
 
-  // Optimistic toggle Active/Deactivate -> PUT /api/signup/:id with isActive
-  const toggleActive = async (id) => {
-    const prevUsers = [...users];
-    const target = users.find((u) => u.id === id);
-    if (!target) return;
-
-    const newActive = !target.active;
-    // optimistic UI
+  // Toggle Active Status
+  const toggleActive = async (id, currentStatus) => {
+    const newStatus = !currentStatus;
     setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, active: newActive } : u))
+      prev.map((u) => (u.id === id ? { ...u, active: newStatus } : u))
     );
-    setActionLoading((s) => ({ ...s, [id]: true }));
 
     try {
-      await api.put(`/${id}`, { isActive: newActive });
-      // server success - state already updated
+      await api.put(`/api/signup/${id}`, { isActive: newStatus });
+      toast.success(newStatus ? "User activated" : "User deactivated");
     } catch (err) {
-      // revert
-      setUsers(prevUsers);
-      console.error("Failed to toggle active:", err);
-      alert("Failed to update user status");
-    } finally {
-      setActionLoading((s) => ({ ...s, [id]: false }));
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, active: currentStatus } : u))
+      );
+      toast.error("Failed to update status");
     }
   };
 
-  // Reset password (admin) -> new admin route PUT /api/signup/:id/reset-password (provided in backend section)
+  // Reset Password
   const resetPassword = async (id) => {
     if (!passwordInput || passwordInput.length < 8) {
-      alert("Password must be at least 8 characters.");
+      toast.error("Password must be at least 8 characters");
       return;
     }
+
     setActionLoading((s) => ({ ...s, [id]: true }));
     try {
-      await api.put(`/${id}/reset-password`, { newPassword: passwordInput });
+      await api.put(`/api/signup/${id}/reset-password`, { newPassword: passwordInput });
+      toast.success("Password reset successfully");
       setShowPasswordModal(null);
       setPasswordInput("");
-      alert("Password reset successfully");
     } catch (err) {
-      console.error("Reset password failed:", err);
-      alert(err?.response?.data?.error || "Failed to reset password");
+      toast.error(err?.response?.data?.error || "Failed to reset password");
     } finally {
       setActionLoading((s) => ({ ...s, [id]: false }));
     }
   };
 
-  // Delete user
+  // Delete User
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
     setActionLoading((s) => ({ ...s, [id]: true }));
     try {
-      await api.delete(`/${id}`);
+      await api.delete(`/api/signup/${id}`);
       setUsers((prev) => prev.filter((u) => u.id !== id));
+      toast.success("User deleted");
+      setConfirmDelete(null);
     } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete user");
+      toast.error("Failed to delete user");
     } finally {
       setActionLoading((s) => ({ ...s, [id]: false }));
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white/95 p-6 rounded-xl shadow-2xl border border-purple-800/30 w-full max-w-[48rem] mx-4">
-        <h2 className="text-2xl font-bold mb-6 text-purple-900">
-          Admin – User Management
-        </h2>
-
-        {/* ➕ Add User Form */}
-        <div className="flex flex-col flex-wrap sm:flex-row gap-3 mb-6">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={newUser.name}
-            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-            className="flex-1 px-4 py-2 border rounded focus:ring focus:ring-purple-300"
-          />
-          <input
-            type="email"
-            placeholder="Gmail address"
-            value={newUser.email}
-            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            className="flex-1 px-4 py-2 border rounded focus:ring focus:ring-purple-300"
-          />
-          <input
-            type="text"
-            placeholder="Card ID"
-            value={newUser.cardId}
-            onChange={(e) => setNewUser({ ...newUser, cardId: e.target.value })}
-            className="px-4 py-2 border rounded focus:ring focus:ring-purple-300"
-          />
-          <input
-            type="text"
-            placeholder="Organization Name"
-            value={newUser.organization}
-            onChange={(e) =>
-              setNewUser({ ...newUser, organization: e.target.value })
-            }
-            className="px-4 py-2 border rounded focus:ring focus:ring-purple-300"
-          />
-          <select
-            value={newUser.role}
-            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-            className="px-3 py-2 border rounded bg-purple-50 text-purple-800"
-          >
-            <option value="Admin">Admin</option>
-            <option value="User">User</option>
-          </select>
-          <input
-            type="password"
-            placeholder="Password"
-            value={newUser.password}
-            onChange={(e) =>
-              setNewUser({ ...newUser, password: e.target.value })
-            }
-            className="px-4 py-2 border rounded focus:ring focus:ring-purple-300"
-          />
-          <button
-            onClick={addUser}
-            disabled={!!actionLoading.add}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-60"
-          >
-            {actionLoading.add ? "Adding..." : "Add"}
-          </button>
-        </div>
-
-        {/* 👥 User Cards */}
-        <div className="overflow-y-auto max-h-[60vh] grid gap-4">
-          {loading ? (
-            <div className="text-center text-gray-500">Loading users...</div>
-          ) : (
-            users.map((u) => (
-              <div
-                key={u.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg shadow-sm bg-white hover:shadow-md transition"
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl border border-purple-100 w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-200 text-white p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Users className="w-8 h-8" />
+                <h2 className="text-2xl font-bold">User Management</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 bg-transparent hover:bg-white/20 rounded-lg transition"
               >
-                {/* Left: User Info */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">
-                    {u.name?.charAt(0)?.toUpperCase() ||
-                      u.email?.charAt(0)?.toUpperCase() ||
-                      "U"}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">
-                      {u.name}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">{u.email}</p>
-                    <p className="text-sm text-gray-500">Card ID: {u.cardId}</p>
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                      <Building2 size={14} /> {u.organization}
-                    </p>
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                      {u.role === "Admin" ? (
-                        <Shield size={14} />
-                      ) : (
-                        <User size={14} />
-                      )}
-                      {u.role}
-                    </p>
-                    <p
-                      className={`text-xs ${
-                        u.active ? "text-green-600" : "text-red-500"
-                      }`}
-                    >
-                      {u.active ? "Active" : "Inactive"} • Joined {u.createdAt}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right: Actions */}
-                <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end sm:flex-nowrap">
-                  {/* Change Role */}
-                  <select
-                    value={u.role}
-                    onChange={(e) => updateRole(u.id, e.target.value)}
-                    className="px-2 py-1 text-sm border rounded bg-purple-50 text-purple-800"
-                    disabled={!!actionLoading[u.id]}
-                  >
-                    <option value="Admin">Admin</option>
-                    <option value="User">User</option>
-                  </select>
-
-                  {/* Activate / Deactivate */}
-                  <button
-                    onClick={() => toggleActive(u.id)}
-                    disabled={!!actionLoading[u.id]}
-                    className={`px-3 py-1 text-sm rounded ${
-                      u.active
-                        ? "bg-red-500 hover:bg-red-600"
-                        : "bg-green-500 hover:bg-green-600"
-                    } text-white`}
-                  >
-                    {actionLoading[u.id]
-                      ? "Updating..."
-                      : u.active
-                      ? "Deactivate"
-                      : "Activate"}
-                  </button>
-
-                  {/* Reset Password */}
-                  <button
-                    onClick={() => setShowPasswordModal(u.id)}
-                    className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1"
-                    disabled={!!actionLoading[u.id]}
-                  >
-                    <Lock size={14} /> Reset
-                  </button>
-
-                  {/* Delete (optional) */}
-                  <button
-                    onClick={() => deleteUser(u.id)}
-                    className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-1"
-                    disabled={!!actionLoading[u.id]}
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* 🔒 Reset Password Modal */}
-        {showPasswordModal && (
-          <div
-            className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50"
-            onClick={(e) =>
-              e.target === e.currentTarget && setShowPasswordModal(null)
-            }
-          >
-            <div className="bg-white p-6 rounded-xl shadow-lg w-[22rem] border border-purple-200">
-              <h3 className="text-lg font-bold text-purple-900 mb-3">
-                Set New Password
-              </h3>
-              <input
-                type="password"
-                placeholder="Enter new password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full px-4 py-2 border rounded mb-4 focus:ring focus:ring-purple-300"
-              />
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowPasswordModal(null)}
-                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => resetPassword(showPasswordModal)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                >
-                  {actionLoading[showPasswordModal] ? "Saving..." : "Save"}
-                </button>
-              </div>
+                <X className="w-6 h-6" />
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Footer */}
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-400/30 text-gray-900 rounded-lg hover:bg-gray-400/50"
+          {/* Toolbar */}
+          <div className="p-5 border-b bg-gray-50 flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or card ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-4 py-3 border rounded-xl bg-white"
+              >
+                <option value="All">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-3 border rounded-xl bg-white"
+              >
+                <option value="All">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="px-5 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 flex items-center gap-2 font-medium shadow-lg shadow-purple-500/30 transition"
+              >
+                <Plus className="w-5 h-5" />
+                Add User
+              </button>
+            </div>
+          </div>
+
+          {/* Users Grid */}
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white/70 border border-gray-200 rounded-xl p-6 animate-pulse"
+                  >
+                    <div className="flex gap-4">
+                      <div className="w-14 h-14 bg-gray-300 rounded-full" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-5 bg-gray-300 rounded w-3/4" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">
+                <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p>No users found matching your filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+  {filteredUsers.map((u) => (
+    <div
+      key={u.id}
+      className="group relative bg-white rounded-2xl border border-gray-200/80 hover:border-gray-300 
+                 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden
+                 hover:-translate-y-1"
+    >
+      {/* Subtle gradient accent on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      {/* Main Content */}
+      <div className="relative p-6">
+        {/* Avatar + Status Badge */}
+        <div className="flex items-start justify-between mb-5">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 
+                            flex items-center justify-center text-white text-2xl font-bold 
+                            shadow-xl ring-4 ring-white/50">
+              {u.name.charAt(0).toUpperCase()}
+            </div>
+            {/* Online/Offline indicator */}
+            <div
+              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white 
+                          ${u.active ? "bg-emerald-500" : "bg-gray-400"}`}
+            />
+          </div>
+
+          {/* Role badge */}
+          <span
+            className={`px-3 py-1.5 rounded-full text-xs font-medium tracking-wider uppercase
+                        ${
+                          u.role === "Admin"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
           >
-            Close
-          </button>
+            {u.role}
+          </span>
+        </div>
+
+        {/* User Info */}
+        <div className="space-y-1">
+          <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+            {u.name}
+          </h3>
+          <p className="text-sm text-gray-500 truncate">{u.email}</p>
+        </div>
+
+        {/* Details */}
+        <div className="mt-4 space-y-3 text-sm">
+          <div className="flex items-center gap-2 text-gray-600">
+            <Building2 className="w-4 h-4 text-gray-400" />
+            <span className="truncate">{u.organization}</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-500">
+            <div className="w-4 h-4 bg-gray-300 rounded border-2 border-dashed border-gray-400" />
+            <code className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+              {u.cardId}
+            </code>
+          </div>
+        </div>
+
+        {/* Joined date */}
+        <p className="mt-4 text-xs text-gray-400 flex items-center gap-1">
+          <span>Joined {u.createdAt}</span>
+        </p>
+      </div>
+
+      {/* Action Bar - Minimal & Clean */}
+      <div className="relative bg-gray-50/70 border-t border-gray-200 px-5 py-4">
+        <div className="flex items-center justify-between gap-3">
+          {/* Role Switch */}
+          <select
+            value={u.role}
+            onChange={(e) => updateRole(u.id, e.target.value)}
+            disabled={!!actionLoading[u.id]}
+            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white 
+                       focus:ring-2 focus:ring-purple-500 focus:border-purple-500 
+                       outline-none cursor-pointer hover:bg-gray-50 transition"
+          >
+            <option value="User">User</option>
+            <option value="Admin">Admin</option>
+          </select>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1.5">
+            {/* Toggle Active */}
+            <button
+              onClick={() => toggleActive(u.id, u.active)}
+              disabled={!!actionLoading[u.id]}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                         flex items-center gap-1.5
+                         ${
+                           u.active
+                             ? "bg-red-500/10 text-red-600 hover:bg-red-500/20"
+                             : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                         }`}
+            >
+              {actionLoading[u.id] ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : u.active ? (
+                <>
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  Deactivate
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                  Activate
+                </>
+              )}
+            </button>
+
+            {/* Reset Password */}
+            <button
+              onClick={() => setShowPasswordModal(u.id)}
+              className="p-2 bg-transparent rounded-lg hover:bg-gray-200/70 transition"
+              title="Reset Password"
+            >
+              <Lock className="w-4 h-4 text-gray-500" />
+            </button>
+
+            {/* Delete */}
+            <button
+              onClick={() => setConfirmDelete(u.id)}
+              className="p-2 bg-transparent rounded-lg hover:bg-red-50 transition group"
+              title="Delete User"
+            >
+              <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  ))}
+</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Add User Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+            <h3 className="text-2xl font-bold mb-6">Add New User</h3>
+            <div className="grid md:grid-cols-2 gap-5">
+              <input
+                type="text"
+                placeholder="Full Name *"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+              <input
+                type="email"
+                placeholder="Email Address *"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Card ID *"
+                value={newUser.cardId}
+                onChange={(e) => setNewUser({ ...newUser, cardId: e.target.value })}
+                className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Organization"
+                value={newUser.organization}
+                onChange={(e) => setNewUser({ ...newUser, organization: e.target.value })}
+                className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                className="px-4 py-3 border rounded-xl bg-white"
+              >
+                <option value="User">User</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <input
+                type="password"
+                placeholder="Password (min 8 chars) *"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                className="px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+            </div>
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="px-6 bg-transparent py-3 border rounded-xl hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addUser}
+                disabled={actionLoading.add}
+                className="px-8 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-60 flex items-center gap-2"
+              >
+                {actionLoading.add ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Create User"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Reset Password</h3>
+            <input
+              type="password"
+              placeholder="New password (min 8 characters)"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(null);
+                  setPasswordInput("");
+                }}
+                className="px-6 py-3 border rounded-xl hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => resetPassword(showPasswordModal)}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
+              >
+                Save Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">Delete User?</h3>
+            <p className="text-gray-600 mb-8">
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-6 py-3 border rounded-xl hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteUser(confirmDelete)}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700"
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

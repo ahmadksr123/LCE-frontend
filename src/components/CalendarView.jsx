@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Views } from "react-big-calendar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import { format } from "date-fns";
+import { Toaster } from 'react-hot-toast';
+
+<Toaster position="top-right" />
 import {
   Filter,
   Shield,
@@ -63,7 +66,7 @@ export default function CalendarView() {
   const [showUsers, setShowUsers] = useState(false);
   const [users, setUsers] = useState([]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -366,7 +369,7 @@ export default function CalendarView() {
           fixed lg:relative
           inset-y-0 left-0
           z-30 lg:z-0
-          w-64 sm:w-72 lg:w-80
+          w-64 sm:w-72 lg:w-80 md:w-80
           transform transition-transform duration-300
           ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col

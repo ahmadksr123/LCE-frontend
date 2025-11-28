@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
 import axios from "axios";
+import api from "../components/axiosInstance"; // Make sure this path is correct
 import "react-datepicker/dist/react-datepicker.css";
 
 export default function BookingForm({
@@ -17,18 +18,37 @@ export default function BookingForm({
   const [existingMeetings, setExistingMeetings] = useState([]);
 
   // ✅ Fetch existing meetings for conflict checking
-  useEffect(() => {
-    const fetchMeetings = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/meetings");
-        // const res = await axios.get("https://lce-backend-bxn1.onrender.com/api/meetings");
-        setExistingMeetings(res.data || []);
-      } catch (err) {
-        console.error("Error fetching meetings for conflict check:", err);
-      }
-    };
-    fetchMeetings();
-  }, []);
+  // useEffect(() => {
+  //   const fetchMeetings = async () => {
+  //     try {
+  //       const res = await axios.get("http://localhost:5000/api/meetings");
+  //       // const res = await axios.get("https://lce-backend-bxn1.onrender.com/api/meetings");
+  //       setExistingMeetings(res.data || []);
+  //     } catch (err) {
+  //       console.error("Error fetching meetings for conflict check:", err);
+  //     }
+  //   };
+  //   fetchMeetings();
+  // }, []);
+const [loadingMeetings, setLoadingMeetings] = useState(true);
+
+useEffect(() => {
+  const fetchMeetings = async () => {
+    setLoadingMeetings(true);
+    try {
+      const res = await api.get("/api/meetings");
+      setExistingMeetings(res.data || []);
+    } catch (err) {
+      console.error("Error fetching meetings:", err);
+      setExistingMeetings([]); // Fallback
+      // toast.error("Could not load meetings");
+    } finally {
+      setLoadingMeetings(false);
+    }
+  };
+
+  fetchMeetings();
+}, []);
 
   // ✅ Helper function to check overlap with 10-min buffer
   const checkRoomAvailability = () => {
@@ -97,8 +117,11 @@ export default function BookingForm({
         description: newEvent.description || "",
       };
 
-      const res = await axios.post("http://localhost:5000/api/meetings", payload, {
-      // const res = await axios.post("https://lce-backend-bxn1.onrender.com/api/meetings", payload, {
+      // const res = await axios.post("http://localhost:5000/api/meetings", payload, {
+      // // const res = await axios.post("https://lce-backend-bxn1.onrender.com/api/meetings", payload, {
+      //   headers: { "Content-Type": "application/json" },
+      // });
+      const res = await api.post("/api/meetings", payload, {
         headers: { "Content-Type": "application/json" },
       });
 
