@@ -69,49 +69,45 @@ export default function CalendarView() {
   const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const meetings = await fetchMeetings();
+  (async () => {
+    const raw = await fetchMeetings();
 
-      const userData = localStorage.getItem("user");
-      const parsedUser = userData ? JSON.parse(userData) : {};
-      const role = parsedUser?.role || "Owner";
-      const id = parsedUser?.id || parsedUser?._id || null;
+    // safe user
+    let u = null;
+    try { u = JSON.parse(localStorage.getItem("user") || "null"); } catch { u = null; }
+    const role = (u?.role || "Owner").toString();
+    const uid = (u?.id || u?._id || null)?.toString();
 
-      console.log("User role from localStorage:", id, role);
-      setRole(role);
+    setRole(role);
 
-      if (role === "User" || role === "user") {
-        const now = new Date();
+    // normalize meetings for react-big-calendar + your CRUD
+    const meetings = (Array.isArray(raw) ? raw : [])
+      .filter(Boolean)
+      .map((m) => ({
+        ...m,
+        id: (m._id || m.id || "").toString(),
+        start: new Date(m.startTime ?? m.start),
+        end: new Date(m.endTime ?? m.end),
+        organizerId: (
+          typeof m.organizer === "string"
+            ? m.organizer
+            : m.organizer?._id || m.organizer?.id || m.organizerId || m.createdBy?._id || m.createdBy?.id
+        )?.toString() ?? null,
+      }))
+      .filter((m) => m.id && !isNaN(m.start) && !isNaN(m.end)); // keep only valid events
 
-        const filteredMeetings = meetings.filter((m) => {
-          // Handle organizer as both string ID and object
-          let organizerId = null;
-          if (typeof m.organizer === 'string') {
-            organizerId = m.organizer;
-          } else if (m.organizer && typeof m.organizer === 'object') {
-            organizerId = m.organizer._id || m.organizer.id;
-          } else {
-            organizerId = m.organizerId || m.createdBy?._id || m.createdBy?.id;
-          }
-          
-          // const start = new Date(m.startTime || m.start);
-          const end = new Date(m.endTime || m.end);
+    if (role.toLowerCase() !== "user") {
+      setEvents(meetings);
+      return;
+    }
 
-          const isOwnMeeting = organizerId === id;
-          const isFutureOrOngoing = end >= now;
+    const now = new Date();
+    setEvents(
+      meetings.filter((m) => m.end >= now || (uid && m.organizerId === uid))
+    );
+  })();
+}, []);
 
-          return isOwnMeeting || isFutureOrOngoing;
-        });
-
-        console.log(
-          `✅ Filtered ${filteredMeetings.length} of ${meetings.length} meetings for user ${id}`
-        );
-        setEvents(filteredMeetings);
-      } else {
-        setEvents(meetings);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(async () => {
