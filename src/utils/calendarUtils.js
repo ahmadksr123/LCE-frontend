@@ -30,7 +30,7 @@ function getCurrentUserId() {
 export const eventStyleGetter = (event) => {
   const room = meetingRooms.find((r) => r.name === event.room);
   const isPast = event.end < new Date();
-  const isUserMeeting = event.organizer._id === getCurrentUserId(); // Implement this function based on your auth logic
+  const isUserMeeting = event?.organizer?._id === getCurrentUserId(); // Implement this function based on your auth logic
 
     if (isUserMeeting) {
         return {
