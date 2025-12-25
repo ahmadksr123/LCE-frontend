@@ -104,8 +104,8 @@ export default function AnalyticsDashboard() {
 
   const uniqueRooms = [
     "All",
-    "Room A", "Room B", "Room C", "Room D",
-    "Room E", "Room F", "Room G", "Room H",
+    "Director's office","Room A", "Room B", "Room C", "Room D",
+    "Room E", "Room F", "Room G", "Room H", "Room I",
   ];
 
   const getFilteredUserStats = () => {

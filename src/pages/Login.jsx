@@ -55,6 +55,7 @@ export default function Login({ onLogin }) {
 
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
+      
 
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email);

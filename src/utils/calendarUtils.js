@@ -12,14 +12,16 @@ export const localizer = dateFnsLocalizer({
 });
 
 export const meetingRooms = [
-  { id: "room A", name: "Room A", color: "#8e24aa" },
-  { id: "room B", name: "Room B", color: "#3949ab" },
-  { id: "room C", name: "Room C", color: "#00897b" },
-  { id: "room D", name: "Room D", color: "#f4511e" },
-  { id: "room E", name: "Room E", color: "#df74d5" },
-  { id: "room F", name: "Room F", color: "#3949ab" },
-  { id: "room G", name: "Room G", color: "#00897b" },
-  { id: "room H", name: "Room H", color: "#f4511e" },
+  { id: "room 1", name: "Director's office", color: "#8e24aa" },
+  { id: "room 2", name: "Room A", color: "#3949ab" },
+  { id: "room 3", name: "Room B", color: "#00897b" },
+  { id: "room 4", name: "Room C", color: "#f4511e" },
+  { id: "room 5", name: "Room D", color: "#df74d5" },
+  { id: "room 6", name: "Room E", color: "#3949ab" },
+  { id: "room 7", name: "Room F", color: "#00897b" },
+  { id: "room 8", name: "Room G", color: "#f4511e" },
+  { id: "room 9", name: "Room H", color: "#df74d5" },
+  { id: "room 10", name: "Room I", color: "#8e24aa" },
 ];
 function getCurrentUserId() {
     const user = JSON.parse(localStorage.getItem("user"));

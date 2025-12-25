@@ -4,7 +4,6 @@ import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import { format } from "date-fns";
 import { Toaster } from 'react-hot-toast';
 
-<Toaster position="top-right" />
 import {
   Filter,
   Shield,
@@ -199,7 +198,9 @@ export default function CalendarView() {
     roomFilter === "all" ? events : events.filter((e) => e.room === roomFilter);
 
   return (
+    
     <div className="min-h-screen w-screen flex flex-col bg-gradient-to-br from-purple-50 via-white to-purple-50 font-sans text-gray-900">
+      <Toaster position="top-right" />
       {/* Header */}
       <header className="sticky top-0 z-20 backdrop-blur-lg bg-white/90 border-b border-purple-200/50 shadow-sm">
         <div className="px-3 sm:px-4 lg:px-6 py-3">
@@ -449,6 +450,7 @@ export default function CalendarView() {
               resizable
               onEventResize={onEventResize}
               onSelectEvent={(event) => setSelectedEvent(event)}
+
             />
           </div>
         </div>
@@ -473,6 +475,9 @@ export default function CalendarView() {
           onDelete={handleDelete}
           onEdit={handleEdit}
           role={role}
+          // send the user name and organization name as props
+          userName={localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).name : "—"}
+          organization={localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).organization || "—" : "—"}
         />
       )}
 
