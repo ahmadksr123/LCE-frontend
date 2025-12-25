@@ -10,8 +10,6 @@ export default function MeetingDetails({
   onDelete,
   onEdit,
   role,
-  userName,
-  organization,
 }) {
   // ✅ prevent background scroll while modal is open (matches BookingForm behavior)
   useEffect(() => {
@@ -53,9 +51,8 @@ export default function MeetingDetails({
       : null;
 
   // ✅ Organizer name and organization from the funation passing as a prob
-  const organizerName = userName || event.organizer?.userName || "—";
-  const organizationName =
-    organization || event.organizer?.organization || "—";
+  const organizerName = event.organizer?.name || "—";
+  const organizationName = event.organizer?.organization || "—";
 
   return (
     <div

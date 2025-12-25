@@ -76,7 +76,6 @@ export default function CalendarView() {
       const role = parsedUser?.role || "Owner";
       const id = parsedUser?.id || parsedUser?._id || null;
 
-      console.log("User role from localStorage:", id, role);
       setRole(role);
 
       if (role === "User" || role === "user") {
@@ -475,9 +474,7 @@ export default function CalendarView() {
           onDelete={handleDelete}
           onEdit={handleEdit}
           role={role}
-          // send the user name and organization name as props
-          userName={localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).name : "—"}
-          organization={localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).organization || "—" : "—"}
+          
         />
       )}
 
