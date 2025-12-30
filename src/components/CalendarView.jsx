@@ -145,10 +145,10 @@ export default function CalendarView() {
 
   const onEventDrop = async ({ event, start, end }) => {
     if (start < new Date()) return;
-    if (!canEdit(role)) {
-      alert("You don't have permission to edit meetings.");
-      return;
-    }
+    // if (!canEdit(role)) {
+    //   alert("You don't have permission to edit meetings.");
+    //   return;
+    // }
 
     const updated = await updateMeeting(event.id, {
       ...event,
@@ -180,10 +180,10 @@ export default function CalendarView() {
   };
 
   const handleEdit = async (updatedEvent) => {
-    if (!canEdit(role)) {
-      alert("You don't have permission to edit meetings.");
-      return;
-    }
+    // if (!canEdit(role)) {
+    //   alert("You don't have permission to edit meetings.");
+    //   return;
+    // }
     const updated = await updateMeeting(updatedEvent.id, updatedEvent);
     if (updated) {
       setEvents(
