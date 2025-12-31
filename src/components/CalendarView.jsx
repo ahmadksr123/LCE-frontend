@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Calendar, Views } from "react-big-calendar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import { format } from "date-fns";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 import {
-  Filter,
-  Shield,
   Plus,
   Users,
   LogOut,
@@ -15,6 +14,7 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
 } from "lucide-react";
+
 import { refreshToken, logout } from "../api/authApi.js";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -25,7 +25,7 @@ import MeetingDetails from "./MeetingDetails";
 import UserManagement from "./UserManagement";
 import Heatmap from "./Heatmap";
 import RoomFilter from "./RoomFilter";
-import RoleSwitcher from "./RoleSwitcher";
+import UsedHoursCard from "./UsedHoursCard";
 
 import {
   localizer,
@@ -33,22 +33,20 @@ import {
   eventStyleGetter,
   getDayCount,
 } from "../utils/calendarUtils.js";
+
 import {
   fetchMeetings,
   createMeeting,
   updateMeeting,
   deleteMeeting,
 } from "../api/calendarApi.js";
-import {
-  canCreate,
-  canEdit,
-  canDelete,
-  canManageUsers,
-} from "../utils/permissions";
+
+import { canCreate, canDelete, canManageUsers } from "../utils/permissions";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 
 export default function CalendarView() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState(Views.WEEK);
@@ -59,13 +57,53 @@ export default function CalendarView() {
     end: new Date(),
     room: null,
   });
+
   const [roomFilter, setRoomFilter] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [role, setRole] = useState("Owner");
+
   const [showUsers, setShowUsers] = useState(false);
   const [users, setUsers] = useState([]);
+
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [showOnlyMine, setShowOnlyMine] = useState(false);
+
+  const [nowTime, setNowTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNowTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      const u = raw ? JSON.parse(raw) : null;
+      setCurrentUserId(u?.id || u?._id || null);
+    } catch {
+      setCurrentUserId(null);
+    }
+  }, []);
+
+  const getOrganizerId = (m) => {
+    if (!m) return null;
+    const org = m.organizer;
+
+    if (typeof org === "string") return org;
+    if (org && typeof org === "object") return org._id || org.id || null;
+
+    return m.organizerId || m.createdBy?._id || m.createdBy?.id || null;
+  };
+
+  const formatHours = (ms) => {
+    const totalMin = Math.max(0, Math.round(ms / 60000));
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return `${h}h ${m}m`;
+  };
 
   useEffect(() => {
     (async () => {
@@ -73,37 +111,24 @@ export default function CalendarView() {
 
       const userData = localStorage.getItem("user");
       const parsedUser = userData ? JSON.parse(userData) : {};
-      const role = parsedUser?.role || "Owner";
+      const roleFromStorage = parsedUser?.role || "Owner";
       const id = parsedUser?.id || parsedUser?._id || null;
 
-      setRole(role);
+      setRole(roleFromStorage);
+      setCurrentUserId(id);
 
-      if (role === "User" || role === "user") {
+      // Users see: their own + future/ongoing (as per your logic)
+      if (String(roleFromStorage || "").toLowerCase() === "user") {
         const now = new Date();
 
         const filteredMeetings = meetings.filter((m) => {
-          // Handle organizer as both string ID and object
-          let organizerId = null;
-          if (typeof m.organizer === 'string') {
-            organizerId = m.organizer;
-          } else if (m.organizer && typeof m.organizer === 'object') {
-            organizerId = m.organizer._id || m.organizer.id;
-          } else {
-            organizerId = m.organizerId || m.createdBy?._id || m.createdBy?.id;
-          }
-          
-          // const start = new Date(m.startTime || m.start);
+          const organizerId = getOrganizerId(m);
           const end = new Date(m.endTime || m.end);
-
           const isOwnMeeting = organizerId === id;
           const isFutureOrOngoing = end >= now;
-
           return isOwnMeeting || isFutureOrOngoing;
         });
 
-        console.log(
-          `✅ Filtered ${filteredMeetings.length} of ${meetings.length} meetings for user ${id}`
-        );
         setEvents(filteredMeetings);
       } else {
         setEvents(meetings);
@@ -121,6 +146,41 @@ export default function CalendarView() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // My meetings
+  const myMeetings = useMemo(() => {
+    if (!currentUserId) return [];
+    return (events || []).filter((m) => getOrganizerId(m) === currentUserId);
+  }, [events, currentUserId]);
+
+  const myMonthUsedMs = useMemo(() => {
+    const y = selectedDate.getFullYear();
+    const mon = selectedDate.getMonth();
+
+    return myMeetings.reduce((acc, m) => {
+      const start = new Date(m.startTime || m.start);
+      const end = new Date(m.endTime || m.end);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return acc;
+
+      if (start.getFullYear() === y && start.getMonth() === mon) {
+        return acc + Math.max(0, end.getTime() - start.getTime());
+      }
+      return acc;
+    }, 0);
+  }, [myMeetings, selectedDate]);
+
+  const myMeetingsThisMonthCount = useMemo(() => {
+    const y = selectedDate.getFullYear();
+    const mon = selectedDate.getMonth();
+
+    return myMeetings.filter((m) => {
+      const start = new Date(m.startTime || m.start);
+      if (isNaN(start.getTime())) return false;
+      return start.getFullYear() === y && start.getMonth() === mon;
+    }).length;
+  }, [myMeetings, selectedDate]);
+
+  const myMeetingsCount = myMeetings.length;
 
   const handleSaveBooking = async () => {
     if (!canCreate(role)) {
@@ -145,16 +205,13 @@ export default function CalendarView() {
 
   const onEventDrop = async ({ event, start, end }) => {
     if (start < new Date()) return;
-    // if (!canEdit(role)) {
-    //   alert("You don't have permission to edit meetings.");
-    //   return;
-    // }
 
     const updated = await updateMeeting(event.id, {
       ...event,
       startTime: start,
       endTime: end,
     });
+
     if (updated) {
       setEvents(
         events.map((ev) => (ev.id === event.id ? { ...ev, start, end } : ev))
@@ -180,10 +237,6 @@ export default function CalendarView() {
   };
 
   const handleEdit = async (updatedEvent) => {
-    // if (!canEdit(role)) {
-    //   alert("You don't have permission to edit meetings.");
-    //   return;
-    // }
     const updated = await updateMeeting(updatedEvent.id, updatedEvent);
     if (updated) {
       setEvents(
@@ -193,18 +246,26 @@ export default function CalendarView() {
     }
   };
 
-  const filteredEvents =
+  // Filters
+  const baseEvents =
     roomFilter === "all" ? events : events.filter((e) => e.room === roomFilter);
 
+  const filteredEvents =
+    String(role || "").toLowerCase() === "user" &&
+    showOnlyMine &&
+    currentUserId
+      ? baseEvents.filter((m) => getOrganizerId(m) === currentUserId)
+      : baseEvents;
+
   return (
-    
-    <div className="min-h-screen w-screen flex flex-col bg-gradient-to-br from-purple-50 via-white to-purple-50 font-sans text-gray-900">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-gradient-to-br from-purple-50 via-white to-purple-50 font-sans text-gray-900">
       <Toaster position="top-right" />
+
       {/* Header */}
       <header className="sticky top-0 z-20 backdrop-blur-lg bg-white/90 border-b border-purple-200/50 shadow-sm">
         <div className="px-3 sm:px-4 lg:px-6 py-3">
           <div className="flex items-center justify-between">
-            {/* Left Section - Logo & Title */}
+            {/* Left */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setShowSidebar(!showSidebar)}
@@ -213,25 +274,31 @@ export default function CalendarView() {
               >
                 <Menu size={20} />
               </button>
+
               <div className="flex items-center gap-2">
-                <CalendarIcon className="text-purple-600 hidden sm:block" size={24} />
+                <CalendarIcon
+                  className="text-purple-600 hidden sm:block"
+                  size={24}
+                />
                 <div>
                   <h2 className="text-base sm:text-xl lg:text-2xl font-bold text-purple-700">
                     {format(selectedDate, "MMM yyyy")}
                   </h2>
-                  <p className="text-xs text-gray-500 hidden sm:block">Meeting Room Calendar</p>
+                  <p className="text-xs text-gray-500 hidden sm:block">
+                    Meeting Room Calendar
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Right Section - Desktop Actions */}
+            {/* Desktop actions */}
             <div className="hidden lg:flex gap-2 items-center flex-wrap">
               <RoomFilter
                 roomFilter={roomFilter}
                 setRoomFilter={setRoomFilter}
                 meetingRooms={meetingRooms}
               />
-              {/* <RoleSwitcher role={role} setRole={setRole} /> */}
+
               {canManageUsers(role) && (
                 <button
                   onClick={() => setShowUsers(true)}
@@ -241,6 +308,7 @@ export default function CalendarView() {
                   <span className="hidden xl:inline">Manage Users</span>
                 </button>
               )}
+
               {canCreate(role) && (
                 <button
                   onClick={() => setShowForm(true)}
@@ -250,14 +318,13 @@ export default function CalendarView() {
                   <span>Create</span>
                 </button>
               )}
+
               <button
                 onClick={() => {
                   const confirmLogout = window.confirm(
                     "Are you sure you want to logout?"
                   );
-                  if (confirmLogout) {
-                    logout();
-                  }
+                  if (confirmLogout) logout();
                 }}
                 className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-all hover:scale-105"
                 title="Logout"
@@ -266,7 +333,7 @@ export default function CalendarView() {
               </button>
             </div>
 
-            {/* Right Section - Mobile/Tablet Actions */}
+            {/* Mobile actions */}
             <div className="flex lg:hidden gap-2 items-center">
               {canCreate(role) && (
                 <button
@@ -284,23 +351,13 @@ export default function CalendarView() {
               </button>
             </div>
           </div>
-
-          {/* Mobile Filters Row */}
-          {/* <div className="lg:hidden mt-3 flex gap-2 overflow-x-auto pb-1">
-            <RoomFilter
-              roomFilter={roomFilter}
-              setRoomFilter={setRoomFilter}
-              meetingRooms={meetingRooms}
-            />
-            <RoleSwitcher role={role} setRole={setRole} />
-          </div> */}
         </div>
       </header>
 
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMobileMenu(false)}
           />
@@ -316,6 +373,7 @@ export default function CalendarView() {
                 </button>
               </div>
             </div>
+
             <div className="p-4 space-y-3">
               {canManageUsers(role) && (
                 <button
@@ -329,10 +387,11 @@ export default function CalendarView() {
                   Manage Users
                 </button>
               )}
+
               {(role === "Owner" || role === "Admin") && (
                 <button
                   onClick={() => {
-                    window.location.href = "/analytics";
+                    navigate("/analytics");
                     setShowMobileMenu(false);
                   }}
                   className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-md font-medium text-sm flex items-center gap-2"
@@ -341,14 +400,13 @@ export default function CalendarView() {
                   View Analytics
                 </button>
               )}
+
               <button
                 onClick={() => {
                   const confirmLogout = window.confirm(
                     "Are you sure you want to logout?"
                   );
-                  if (confirmLogout) {
-                    logout();
-                  }
+                  if (confirmLogout) logout();
                 }}
                 className="w-full bg-red-100 text-red-600 px-4 py-3 rounded-lg hover:bg-red-200 transition-all font-medium text-sm flex items-center gap-2"
               >
@@ -361,24 +419,26 @@ export default function CalendarView() {
       )}
 
       {/* Layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Collapsible on mobile/tablet */}
-        <div className={`
-          ${showSidebar ? 'block' : 'hidden'}
-          lg:block
-          fixed lg:relative
-          inset-y-0 left-0
-          z-30 lg:z-0
-          w-64 sm:w-72 lg:w-80 md:w-80
-          transform transition-transform duration-300
-          ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          flex flex-col
-          border-r border-purple-200/50
-          bg-white
-          shadow-xl lg:shadow-none
-          overflow-y-auto
-        `}>
-          {/* Close button for mobile */}
+      <div className="flex flex-1 h-[calc(100vh-72px)] overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`
+            ${showSidebar ? "block" : "hidden"}
+            lg:block
+            fixed lg:relative
+            inset-y-0 left-0
+            z-30 lg:z-0
+            w-64 sm:w-72 lg:w-80
+            transform transition-transform duration-300
+            ${showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            flex flex-col
+            border-r border-purple-200/50
+            bg-white
+            shadow-xl lg:shadow-none
+            overflow-y-auto
+          `}
+        >
+          {/* Close button (mobile) */}
           <div className="lg:hidden p-4 border-b border-purple-200 flex items-center justify-between">
             <h3 className="font-bold text-purple-700">Calendar Info</h3>
             <button
@@ -389,6 +449,19 @@ export default function CalendarView() {
             </button>
           </div>
 
+          
+
+          {/* ✅ Clean Used Hours Card */}
+          <UsedHoursCard
+            nowTime={nowTime}
+            formatHours={formatHours}
+            myMonthUsedMs={myMonthUsedMs}
+            myMeetingsThisMonthCount={myMeetingsThisMonthCount}
+            myMeetingsCount={myMeetingsCount}
+            showOnlyMine={showOnlyMine}
+            setShowOnlyMine={setShowOnlyMine}
+            role={role}
+          />
           <Heatmap
             selectedDate={selectedDate}
             getDayCount={(date) => getDayCount(events, date)}
@@ -398,61 +471,71 @@ export default function CalendarView() {
           {(role === "Owner" || role === "Admin") && (
             <div className="w-full p-3 sm:p-4 lg:p-5 border-t border-purple-200/50">
               <button
-                onClick={() => (window.location.href = "/analytics")}
+                onClick={() => navigate("/analytics")}
                 className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 sm:py-3 px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
               >
+                {/* <button type="button" onClick={() => navigate("/analytics")}>
+  View Analytics
+</button> */}
                 <BarChart3 size={20} />
                 <span>View Analytics</span>
               </button>
-          <div className="p-4 space-y-2 border-t border-purple-200/50">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Quick Stats</h4>
-            <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-600">Total Meeting</p>
-              <p className="text-2xl font-bold text-purple-700">{events.length}</p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-green-100 to-green-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-600">Current View</p>
-              <p className="text-lg font-bold text-green-700 capitalize">{view}</p>
-            </div>
-          </div>
+
+              <div className="mt-4 space-y-3 border-t border-purple-200/50 pt-4">
+                <h4 className="text-sm font-semibold text-gray-700">
+                  Quick Stats
+                </h4>
+
+                <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-600">Total Meetings</p>
+                  <p className="text-2xl font-bold text-purple-700">
+                    {events.length}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-100 to-green-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-600">Current View</p>
+                  <p className="text-lg font-bold text-green-700 capitalize">
+                    {view}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Quick Stats */}
         </div>
 
         {/* Overlay for mobile sidebar */}
         {showSidebar && (
-          <div 
+          <div
             className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-20"
             onClick={() => setShowSidebar(false)}
           />
         )}
 
         {/* Main Calendar Area */}
-        <div className="flex-1 p-2 sm:p-3 lg:p-4 overflow-hidden flex flex-col">
-          <div className="bg-white rounded-xl shadow-md border border-purple-100 p-2 sm:p-3 lg:p-4 flex-1 overflow-hidden">
-            <DnDCalendar
-              localizer={localizer}
-              events={filteredEvents}
-              startAccessor="start"
-              endAccessor="end"
-              eventPropGetter={eventStyleGetter}
-              date={selectedDate}
-              onNavigate={(date) => setSelectedDate(date)}
-              views={[Views.DAY, Views.WEEK, Views.MONTH]}
-              view={view}
-              onView={(v) => setView(v)}
-              style={{ height: "100%" }}
-              onEventDrop={onEventDrop}
-              resizable
-              onEventResize={onEventResize}
-              onSelectEvent={(event) => setSelectedEvent(event)}
+        {/* Main Calendar Area */}
+<div className="flex-1 p-1 sm:p-1 lg:p-1 overflow-hidden flex flex-col">
+  <div className="bg-white rounded-xl shadow-md border border-purple-100 p-2 sm:p-3 lg:p-4 flex-1 overflow-hidden">
+    <DnDCalendar
+      localizer={localizer}
+      events={filteredEvents}
+      startAccessor="start"
+      endAccessor="end"
+      eventPropGetter={eventStyleGetter}
+      date={selectedDate}
+      onNavigate={(date) => setSelectedDate(date)}
+      views={[Views.DAY, Views.WEEK, Views.MONTH]}
+      view={view}
+      onView={(v) => setView(v)}
+      style={{ height: "100%" }}
+      onEventDrop={onEventDrop}
+      resizable
+      onEventResize={onEventResize}
+      onSelectEvent={(event) => setSelectedEvent(event)}
+    />
+  </div>
+</div>
 
-            />
-          </div>
-        </div>
       </div>
 
       {/* Modals */}
@@ -474,7 +557,6 @@ export default function CalendarView() {
           onDelete={handleDelete}
           onEdit={handleEdit}
           role={role}
-          
         />
       )}
 

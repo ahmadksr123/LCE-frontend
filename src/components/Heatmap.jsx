@@ -65,7 +65,7 @@ export default function Heatmap({ selectedDate, setSelectedDate, getDayCount }) 
 
   return (
     <div className="hidden md:flex flex-col w-80 border-r border-purple-800/30 p-4">
-      <h3 className="text-lg font-semibold mb-4 text-purple-900">
+      <h3 className="text-lg font-semibold mb-1 text-purple-800">
         Monthly Heatmap
       </h3>
 

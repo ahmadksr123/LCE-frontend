@@ -508,57 +508,65 @@ export function MeetingsTable({ allMeetings, filteredMeetings, users }) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-purple-100">
-        <table className="w-full text-xs sm:text-sm">
-          <thead className="bg-gradient-to-r from-purple-600 to-purple-700 text-white">
-            <tr>
-              <th className="py-3 px-4 text-left font-semibold">Date</th>
-              <th className="py-3 px-4 text-left font-semibold">Room</th>
-              <th className="py-3 px-4 text-left font-semibold">Organizer</th>
-              <th className="py-3 px-4 text-left font-semibold">Time</th>
-              <th className="py-3 px-4 text-left font-semibold">Duration</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-purple-100">
-            {displayedMeetings.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="py-12 text-center text-gray-500">
-                  {durationFilter === "all" && !userFilter
-                    ? "No meetings found"
-                    : "No meetings match your filters"}
+      <div className="rounded-lg border border-purple-100">
+  {/* Scroll container */}
+  <div className="max-h-150 overflow-y-auto">
+    <table className="w-full text-xs sm:text-sm">
+      
+      {/* Sticky header */}
+      <thead className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+        <tr>
+          <th className="py-3 px-4 text-left font-semibold">Date</th>
+          <th className="py-3 px-4 text-left font-semibold">Room</th>
+          <th className="py-3 px-4 text-left font-semibold">Organizer</th>
+          <th className="py-3 px-4 text-left font-semibold">Time</th>
+          <th className="py-3 px-4 text-left font-semibold">Duration</th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-purple-100">
+        {displayedMeetings.length === 0 ? (
+          <tr>
+            <td colSpan="5" className="py-12 text-center text-gray-500">
+              {durationFilter === "all" && !userFilter
+                ? "No meetings found"
+                : "No meetings match your filters"}
+            </td>
+          </tr>
+        ) : (
+          displayedMeetings.map((m, i) => {
+            const start = new Date(m.startTime || m.start);
+            const end = new Date(m.endTime || m.end);
+            const durationMs = end - start;
+
+            return (
+              <tr key={i} className="hover:bg-purple-50 transition">
+                <td className="py-3 px-4 text-gray-700">
+                  {format(start, "MMM dd, yyyy")}
+                </td>
+                <td className="py-3 px-4">
+                  <span className="px-3 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
+                    {m.room || "Unassigned"}
+                  </span>
+                </td>
+                <td className="py-3 px-4 font-medium text-gray-800">
+                  {m.organizer?.name || "Unknown"}
+                </td>
+                <td className="py-3 px-4 text-gray-600">
+                  {format(start, "HH:mm")} → {format(end, "HH:mm")}
+                </td>
+                <td className="py-3 px-4">
+                  {getDurationBadge(durationMs)}
                 </td>
               </tr>
-            ) : (
-              displayedMeetings.map((m, i) => {
-                const start = new Date(m.startTime || m.start);
-                const end = new Date(m.endTime || m.end);
-                const durationMs = end - start;
-                return (
-                  <tr key={i} className="hover:bg-purple-50 transition">
-                    <td className="py-3 px-4 text-gray-700">
-                      {format(start, "MMM dd, yyyy")}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-3 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
-                        {m.room || "Unassigned"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-800">
-                      {m.organizer?.name || "Unknown"}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {format(start, "HH:mm")} → {format(end, "HH:mm")}
-                    </td>
-                    <td className="py-3 px-4">
-                      {getDurationBadge(durationMs)}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+            );
+          })
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
     </div>
   );
 }

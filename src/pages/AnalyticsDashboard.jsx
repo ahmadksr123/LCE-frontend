@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { fetchMeetings } from "../api/calendarApi";
 import api from "../components/axiosInstance"; // Make sure this path is correct
-
+import {useNavigate} from "react-router-dom";
 import {
   AnalyticsHeader,
   KeyMetricsSection,
@@ -12,6 +12,7 @@ import {
 } from "../components/AnalyticsComponents";
 
 export default function AnalyticsDashboard() {
+  const navigate = useNavigate();
   const [meetings, setMeetings] = useState([]);
   const [filteredMeetings, setFilteredMeetings] = useState([]);
   const [stats, setStats] = useState({ roomStats: {}, userStats: {}, dailyStats: {} });
@@ -134,10 +135,11 @@ export default function AnalyticsDashboard() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => (window.location.href = "/")}
+                onClick={() => navigate(-1)}
                 className="p-2 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105"
                 title="Back to Calendar"
               >
+                
                 <ArrowLeft size={20} />
               </button>
               <div>
@@ -167,7 +169,7 @@ export default function AnalyticsDashboard() {
 
       <div className="flex-1 overflow-y-auto">
       <div className="max-w-1xl mx-auto p-4 sm:p-6 space-y-6">
-        <KeyMetricsSection filteredMeetings={filteredMeetings} stats={stats} users={users} />
+        {/* <KeyMetricsSection filteredMeetings={filteredMeetings} stats={stats} users={users} />
         <ChartsSection
           stats={stats}
           users={users}
@@ -175,7 +177,7 @@ export default function AnalyticsDashboard() {
           userChartMonth={userChartMonth}
           setUserChartMonth={setUserChartMonth}
           getFilteredUserStats={getFilteredUserStats}
-        />
+        /> */}
 
         {/* Enhanced Table with New Filters */}
         <MeetingsTable
